@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="app-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEROGENESIS | 3D LEO Mega-Constellation & ISL Laser Mesh Simulator</title>
+    <!-- Font Awesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-space: #030712;
+            --bg-panel: rgba(15, 23, 42, 0.85);
+            --border-glow: #1e293b;
+            --border-accent: #38bdf8;
+            --laser-blue: #0ea5e9;
+            --laser-green: #10b981;
+            --hazard-red: #ef4444;
+            --gold-orbit: #f59e0b;
+            --purple-leo: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-ui: 'Tajawal', system-ui, sans-serif;
+        }
+
+        html[dir="ltr"] {
+            --font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-space);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+        }
+
+        /* Top Header */
+        header {
+            height: 64px;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #0284c7, #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
+        }
+
+        .brand-text h1 {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #38bdf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text p {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .header-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--laser-green);
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-ui {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-glow);
+            color: var(--text-main);
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-ui:hover {
+            border-color: var(--laser-blue);
+            background: #1e293b;
+            color: var(--laser-blue);
+        }
+
+        /* Workspace Layout */
+        .workspace {
+            display: grid;
+            grid-template-columns: 320px 1fr 340px;
+            gap: 16px;
+            padding: 16px 20px;
+            flex: 1;
+            min-height: calc(100vh - 64px);
+        }
+
+        @media (max-width: 1280px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.8);
+            border-bottom: 1px solid var(--border-glow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Controls */
+        .ctrl-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ctrl-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .ctrl-value {
+            color: var(--laser-blue);
+            font-weight: 700;
+        }
+
+        .slider-range {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #1e293b;
+            outline: none;
+        }
+
+        .slider-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--laser-blue);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.6);
+            border: 2px solid #fff;
+        }
+
+        /* Cards Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .metric-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metric-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .metric-val {
+            font-size: 15px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* Center Viewport */
+        .viewport-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+        }
+
+        .orbit-canvas-card {
+            background: #010409;
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 480px;
+        }
+
+        #orbitCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .canvas-overlay-hud {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            right: 14px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .hud-tag {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-glow);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--laser-blue);
+        }
+
+        .routing-badge {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--laser-green);
+            color: var(--laser-green);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 12px;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Bottom Row */
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            height: 190px;
+        }
+
+        .telemetry-box {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-glow);
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .telemetry-header {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .chart-canvas {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* View Mode Selector */
+        .view-tabs {
+            display: flex;
+            gap: 6px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--border-glow);
+        }
+
+        .view-tab {
+            flex: 1;
+            padding: 6px;
+            text-align: center;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .view-tab.active {
+            background: #1e293b;
+            color: var(--laser-blue);
+            font-weight: 700;
+        }
+
+        /* Collision Alert Banner */
+        .hazard-banner {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            animation: pulse-danger 1s infinite alternate;
+        }
+
+        @keyframes pulse-danger {
+            from { opacity: 0.8; }
+            to { opacity: 1; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="brand-section">
+            <div class="brand-logo">
+                <i class="fa-solid fa-satellite"></i>
+            </div>
+            <div class="brand-text">
+                <h1 data-i18n="appTitle">AEROGENESIS | LEO Mega-Constellation Simulator</h1>
+                <p data-i18n="appSubtitle">Walker Delta Constellation & Autonomous Optical Mesh Routing (ISL)</p>
+            </div>
+        </div>
+
+        <div class="header-status-badge">
+            <i class="fa-solid fa-circle-nodes"></i>
+            <span id="meshStatusText">OPTICAL ISL MESH: ACTIVE (128 LINKS)</span>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn-ui" onclick="triggerManeuver()">
+                <i class="fa-solid fa-fire"></i>
+                <span data-i18n="btnBurn">COLLISION AVOIDANCE BURN</span>
+            </button>
+            <button class="btn-ui" id="langToggleBtn" onclick="toggleLanguage()">
+                <i class="fa-solid fa-globe"></i>
+                <span id="langText">English</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+        
+        <!-- Left Panel: Orbital Mechanics & Constellation Parameters -->
+        <aside class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-compass-drafting text-cyan-400"></i>
+                    <span data-i18n="orbitalTitle">Walker Delta Orbital Geometry</span>
+                </div>
+                <span class="hud-tag" style="padding: 2px 6px; font-size: 10px;">J2 PERTURBED</span>
+            </div>
+
+            <div class="panel-body">
+                <!-- Altitude (km) -->
+                <div class="ctrl-group">
+                    <div class="ctrl-header">
+                        <span data-i18n="altitude">Orbital Altitude (h)</span>
+                        <span class="ctrl-value" id="valAlt">550 km</span>
+                    </div>
+                    <input type="range" class="slider-range" id="sliderAlt" min="350" max="1200" step="10" value="550">
+                </div>
+
+                <!-- Inclination (deg) -->
+                <div class="ctrl-group">
+                    <div class="ctrl-header">
+                        <span data-i18n="inclination">Orbital Inclination (i)</span>
+                        <span class="ctrl-value" id="valInc">53.0°</span>
+                    </div>
+                    <input type="range" class="slider-range" id="sliderInc" min="0" max="98" step="1" value="53">
+                </div>
+
+                <!-- Orbital Planes (P) -->
+                <div class="ctrl-group">
+                    <div class="ctrl-header">
+                        <span data-i18n="planes">Number of Orbital Planes (P)</span>
+                        <span class="ctrl-value" id="valPlanes">8 Planes</span>
+                    </div>
+                    <input type="range" class="slider-range" id="sliderPlanes" min="3" max="16" step="1" value="8">
+                </div>
+
+                <!-- Satellites per Plane (S) -->
+                <div class="ctrl-group">
+                    <div class="ctrl-header">
+                        <span data-i18n="satsPerPlane">Satellites per Plane (S)</span>
+                        <span class="ctrl-value" id="valSatsPerPlane">8 Satellites</span>
+                    </div>
+                    <input type="range" class="slider-range" id="sliderSatsPerPlane" min="4" max="16" step="1" value="8">
+                </div>
+
+                <!-- Optical ISL Laser Range (km) -->
+                <div class="ctrl-group">
+                    <div class="ctrl-header">
+                        <span data-i18n="laserRange">Laser Crosslink Range (ISL)</span>
+                        <span class="ctrl-value" id="valLaserRange">3,500 km</span>
+                    </div>
+                    <input type="range" class="slider-range" id="sliderLaserRange" min="1500" max="5000" step="100" value="3500">
+                </div>
+
+                <!-- Hazard Alert Banner -->
+                <div class="hazard-banner" id="hazardBanner">
+                    <i class="fa-solid fa-triangle-exclamation text-red-500 text-xl"></i>
+                    <div>
+                        <div style="font-weight: 800; font-size: 12px; color: #f87171;" data-i18n="hazardWarning">CONJUNCTION CONCERN DETECTED</div>
+                        <div style="font-size: 10px; color: #fca5a5;" id="hazardReason">Debris Object #4192 (Miss Dist: 420m)</div>
+                    </div>
+                </div>
+
+                <!-- Orbital Physics Note -->
+                <div style="font-size: 11px; line-height: 1.5; color: var(--text-muted); background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid var(--border-glow);">
+                    <i class="fa-solid fa-circle-info text-cyan-400"></i>
+                    <span data-i18n="orbitalExplain">Walker Delta T/P/F configuration maintains globally uniform constellation coverage while Earth's oblate J2 moment induces nodal regression (dΩ/dt).</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center: 3D Earth Globe & Orbit Viewport -->
+        <section class="viewport-container">
+            <div class="orbit-canvas-card">
+                <canvas id="orbitCanvas"></canvas>
+                
+                <div class="canvas-overlay-hud">
+                    <div class="view-tabs">
+                        <div class="view-tab active" id="tabGlobe" onclick="setViewMode('globe')">3D LEO GLOBE</div>
+                        <div class="view-tab" id="tabGround" onclick="setViewMode('groundtrack')">2D GROUND TRACK</div>
+                        <div class="view-tab" id="tabMesh" onclick="setViewMode('meshgraph')">ISL TOPOLOGY GRAPH</div>
+                    </div>
+
+                    <div class="routing-badge" id="routeBadge">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>ABHA ⟷ TOKYO: <span id="valRouteLatency">32.4 ms</span> (4 HOPS)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Row: Inter-Satellite Link Latency & Orbital Precession -->
+            <div class="bottom-row">
+                <div class="telemetry-box">
+                    <div class="telemetry-header">
+                        <span data-i18n="latencyChart">INTER-SATELLITE OPTICAL LINK LATENCY (ms)</span>
+                        <span id="chartLatencyVal" style="color: var(--laser-blue); font-weight: 700;">32.4 ms (Optical Dijkstra)</span>
+                    </div>
+                    <canvas id="latencyChartCanvas" class="chart-canvas"></canvas>
+                </div>
+                <div class="telemetry-box">
+                    <div class="telemetry-header">
+                        <span data-i18n="dopplerChart">CARRIER FREQUENCY DOPPLER SHIFT (kHz)</span>
+                        <span id="chartDopplerVal" style="color: var(--laser-green); font-weight: 700;">±37.5 kHz</span>
+                    </div>
+                    <canvas id="dopplerChartCanvas" class="chart-canvas"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Optical Mesh Routing & Conjunction Data -->
+        <aside class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-network-wired text-emerald-400"></i>
+                    <span data-i18n="routingTitle">ISL Mesh Routing Engine</span>
+                </div>
+                <span class="hud-tag" style="color: var(--laser-green); font-size: 10px;">100 Gbps OPTICAL</span>
+            </div>
+
+            <div class="panel-body">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <span class="metric-label" data-i18n="activeSats">Total Satellites</span>
+                        <span class="metric-val" id="valTotalSats" style="color: #38bdf8;">64 Active</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-label" data-i18n="orbitalVelocity">Orbital Velocity ($v$)</span>
+                        <span class="metric-val" id="valVel" style="color: #10b981;">7.58 km/s</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-label" data-i18n="orbitPeriod">Period ($T$)</span>
+                        <span class="metric-val" id="valPeriod" style="color: #f59e0b;">95.6 min</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-label" data-i18n="nodalPrecession">Nodal Drift ($\dot{\Omega}$)</span>
+                        <span class="metric-val" id="valPrecession" style="color: #c084fc;">-4.12 °/day</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-label" data-i18n="activeLaserLinks">Active Laser Links</span>
+                        <span class="metric-val" id="valLaserLinks" style="color: #38bdf8;">128 Links</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-label" data-i18n="meshThroughput">Network Throughput</span>
+                        <span class="metric-val" id="valThroughput" style="color: #10b981;">12.8 Tbps</span>
+                    </div>
+                </div>
+
+                <!-- Ground Station Gateway Terminals -->
+                <div class="panel-title" style="margin-top: 8px;">
+                    <i class="fa-solid fa-tower-broadcast text-cyan-400"></i>
+                    <span data-i18n="gatewaysTitle">Ground Gateway Terminals</span>
+                </div>
+                <div class="metric-card" style="gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-mono);">
+                        <span>Abha Ground Hub (KSA)</span>
+                        <span style="color: #10b981;">CONNECTED (SAT-14)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-mono);">
+                        <span>Riyadh Central Gateway</span>
+                        <span style="color: #10b981;">CONNECTED (SAT-22)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-mono);">
+                        <span>Tokyo Teleport (Japan)</span>
+                        <span style="color: #38bdf8;">LINKED (ISL HOP-4)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-mono);">
+                        <span>Frankfurt IXP (Europe)</span>
+                        <span style="color: #38bdf8;">LINKED (ISL HOP-3)</span>
+                    </div>
+                </div>
+
+                <!-- Conjunction Assessment CDM -->
+                <div class="panel-title" style="margin-top: 8px;">
+                    <i class="fa-solid fa-shield-halved text-amber-400"></i>
+                    <span data-i18n="cdmTitle">Conjunction Data Messages (CDM)</span>
+                </div>
+                <div class="metric-card" style="gap: 6px; font-size: 11px; font-family: var(--font-mono);">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Tracked Debris Count:</span>
+                        <span style="color: #f59e0b;">28,450 RSO</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Min Miss Distance:</span>
+                        <span style="color: #10b981;">4.8 km (Nominal)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Collision Probability (Pc):</span>
+                        <span style="color: #10b981;">1.2 × 10⁻⁷</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        // Bilingual Localization
+        const I18N = {
+            ar: {
+                appTitle: "AEROGENESIS | محاكي الأبراج الفضائية للمدار المنخفض (LEO)",
+                appSubtitle: "محاكاة أبراج ووكر دلتا وشبكة التوجيه الليزري الفضائي الموجه ذاتياً (ISL)",
+                btnBurn: "مناورة تفادي الاصطدام (CAM)",
+                orbitalTitle: "هندسة كوكبة ووكر دلتا المدارية",
+                altitude: "الارتفاع المداري (h)",
+                inclination: "زاوية الميلان المداري (i)",
+                planes: "عدد المستويات المدارية (P)",
+                satsPerPlane: "الأقمار في كل مستوى (S)",
+                laserRange: "نطاق الاتصال الليزري البيني (ISL)",
+                hazardWarning: "تنبيه اقتراب حطام فضائي وشيك (CDM)",
+                orbitalExplain: "توزيع ووكر دلتا (T/P/F) يحقق تغطية أرضية شاملة متجانسة بينما يسبب تفلطح الأرض تفلطحاً مدارياً J2 مستمراً.",
+                latencyChart: "زمن استجابة الشبكة الليزرية الفضائية (مللي ثانية)",
+                dopplerChart: "انزياح تردد دوبلر لموجات الناقل (كيلوهيرتز)",
+                routingTitle: "محرك التوجيه الشبكي البصري (ISL)",
+                activeSats: "إجمالي الأقمار النشطة",
+                orbitalVelocity: "السرعة المدارية (v)",
+                orbitPeriod: "الزمن الدوري (T)",
+                nodalPrecession: "الانحراف العقدي للجاذبية (Ω̇)",
+                activeLaserLinks: "الروابط الليزرية النشطة",
+                meshThroughput: "عرض النطاق الترددي للشبكة",
+                gatewaysTitle: "المحطات الأرضية الرئيسية",
+                cdmTitle: "رسائل تقييم مخاطر الاصطدام الفضائي"
+            },
+            en: {
+                appTitle: "AEROGENESIS | LEO Mega-Constellation Simulator",
+                appSubtitle: "Walker Delta Constellation & Autonomous Optical Mesh Routing (ISL)",
+                btnBurn: "COLLISION AVOIDANCE BURN",
+                orbitalTitle: "Walker Delta Orbital Geometry",
+                altitude: "Orbital Altitude (h)",
+                inclination: "Orbital Inclination (i)",
+                planes: "Number of Orbital Planes (P)",
+                satsPerPlane: "Satellites per Plane (S)",
+                laserRange: "Laser Crosslink Range (ISL)",
+                hazardWarning: "CONJUNCTION CONCERN DETECTED",
+                orbitalExplain: "Walker Delta T/P/F configuration maintains globally uniform constellation coverage while Earth's oblate J2 moment induces nodal regression (dΩ/dt).",
+                latencyChart: "INTER-SATELLITE OPTICAL LINK LATENCY (ms)",
+                dopplerChart: "CARRIER FREQUENCY DOPPLER SHIFT (kHz)",
+                routingTitle: "ISL Mesh Routing Engine",
+                activeSats: "Total Satellites",
+                orbitalVelocity: "Orbital Velocity (v)",
+                orbitPeriod: "Period (T)",
+                nodalPrecession: "Nodal Drift (Ω̇)",
+                activeLaserLinks: "Active Laser Links",
+                meshThroughput: "Network Throughput",
+                gatewaysTitle: "Ground Gateway Terminals",
+                cdmTitle: "Conjunction Data Messages (CDM)"
+            }
+        };
+
+        let currentLang = 'ar';
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            document.getElementById('app-root').dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('app-root').lang = currentLang;
+            document.getElementById('langText').textContent = currentLang === 'ar' ? 'English' : 'العربية';
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (I18N[currentLang][key]) {
+                    el.textContent = I18N[currentLang][key];
+                }
+            });
+        }
+
+        // Constellation Orbital Parameters
+        const orbitState = {
+            altitude: 550,       // km
+            inclination: 53.0,   // degrees
+            planes: 8,
+            satsPerPlane: 8,
+            laserRange: 3500,    // km
+            viewMode: 'globe',   // 'globe', 'groundtrack', 'meshgraph'
+            time: 0,
+            hasManeuvered: false
+        };
+
+        // Sliders
+        const sliderAlt = document.getElementById('sliderAlt');
+        const sliderInc = document.getElementById('sliderInc');
+        const sliderPlanes = document.getElementById('sliderPlanes');
+        const sliderSats = document.getElementById('sliderSatsPerPlane');
+        const sliderRange = document.getElementById('sliderLaserRange');
+
+        sliderAlt.addEventListener('input', (e) => { orbitState.altitude = parseFloat(e.target.value); document.getElementById('valAlt').textContent = orbitState.altitude + " km"; updateOrbitalPhysics(); });
+        sliderInc.addEventListener('input', (e) => { orbitState.inclination = parseFloat(e.target.value); document.getElementById('valInc').textContent = orbitState.inclination + "°"; updateOrbitalPhysics(); });
+        sliderPlanes.addEventListener('input', (e) => { orbitState.planes = parseInt(e.target.value); document.getElementById('valPlanes').textContent = orbitState.planes + " Planes"; updateOrbitalPhysics(); });
+        sliderSats.addEventListener('input', (e) => { orbitState.satsPerPlane = parseInt(e.target.value); document.getElementById('valSatsPerPlane').textContent = orbitState.satsPerPlane + " Satellites"; updateOrbitalPhysics(); });
+        sliderRange.addEventListener('input', (e) => { orbitState.laserRange = parseFloat(e.target.value); document.getElementById('valLaserRange').textContent = orbitState.laserRange.toLocaleString() + " km"; updateOrbitalPhysics(); });
+
+        function setViewMode(mode) {
+            orbitState.viewMode = mode;
+            document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+            if(mode === 'globe') document.getElementById('tabGlobe').classList.add('active');
+            if(mode === 'groundtrack') document.getElementById('tabGround').classList.add('active');
+            if(mode === 'meshgraph') document.getElementById('tabMesh').classList.add('active');
+        }
+
+        function triggerManeuver() {
+            orbitState.hasManeuvered = true;
+            const banner = document.getElementById('hazardBanner');
+            banner.style.display = 'flex';
+            banner.style.borderColor = '#10b981';
+            banner.style.background = 'rgba(16, 185, 129, 0.15)';
+            banner.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-xl"></i><div><div style="font-weight: 800; font-size: 12px; color: #34d399;">MANEUVER COMPLETE (Δv = 0.85 m/s)</div><div style="font-size: 10px; color: #a7f3d0;">New Miss Distance: 18.4 km — Risk Clear</div></div>`;
+
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 6000);
+        }
+
+        // Keplerian & J2 Perturbation Physics
+        const R_EARTH = 6378.137; // Earth radius in km
+        const MU = 398600.4418;  // Earth GM in km^3/s^2
+        const J2 = 1.08263e-3;
+
+        let orbitCalc = {};
+
+        function updateOrbitalPhysics() {
+            const r = R_EARTH + orbitState.altitude;
+            const v = Math.sqrt(MU / r); // Orbital velocity km/s
+            const T_sec = 2 * Math.PI * Math.sqrt(Math.pow(r, 3) / MU); // Orbital period seconds
+            const T_min = T_sec / 60.0;
+
+            // Nodal precession rate dOmega/dt due to J2 (degrees per day)
+            const incRad = (orbitState.inclination * Math.PI) / 180.0;
+            const dOmega_rad_sec = -1.5 * (Math.sqrt(MU) * J2 * Math.pow(R_EARTH, 2) / Math.pow(r, 3.5)) * Math.cos(incRad);
+            const dOmega_deg_day = dOmega_rad_sec * (180.0 / Math.PI) * 86400.0;
+
+            const totalSats = orbitState.planes * orbitState.satsPerPlane;
+            const totalLinks = totalSats * 2;
+            const throughput = (totalLinks * 100) / 1000; // Tbps
+
+            orbitCalc = {
+                v,
+                T_min,
+                dOmega_deg_day,
+                totalSats,
+                totalLinks,
+                throughput,
+                r
+            };
+
+            document.getElementById('valTotalSats').textContent = totalSats + " Active";
+            document.getElementById('valVel').textContent = v.toFixed(2) + " km/s";
+            document.getElementById('valPeriod').textContent = T_min.toFixed(1) + " min";
+            document.getElementById('valPrecession').textContent = dOmega_deg_day.toFixed(2) + " °/day";
+            document.getElementById('valLaserLinks').textContent = totalLinks + " Links";
+            document.getElementById('valThroughput').textContent = throughput.toFixed(1) + " Tbps";
+        }
+
+        // Real-Time Charts Buffers
+        const histLen = 60;
+        const latencyHist = new Array(histLen).fill(32);
+        const dopplerHist = new Array(histLen).fill(0);
+
+        setInterval(() => {
+            latencyHist.shift();
+            latencyHist.push(30 + Math.sin(orbitState.time * 2) * 4 + Math.random() * 2);
+
+            dopplerHist.shift();
+            dopplerHist.push(Math.sin(orbitState.time * 3) * 38);
+        }, 200);
+
+        // Canvases
+        const orbitCanvas = document.getElementById('orbitCanvas');
+        const ctxO = orbitCanvas.getContext('2d');
+        const latCanvas = document.getElementById('latencyChartCanvas');
+        const ctxL = latCanvas.getContext('2d');
+        const dopCanvas = document.getElementById('dopplerChartCanvas');
+        const ctxD = dopCanvas.getContext('2d');
+
+        function resizeCanvases() {
+            const oRect = orbitCanvas.parentElement.getBoundingClientRect();
+            orbitCanvas.width = oRect.width * window.devicePixelRatio;
+            orbitCanvas.height = oRect.height * window.devicePixelRatio;
+
+            const lRect = latCanvas.parentElement.getBoundingClientRect();
+            latCanvas.width = lRect.width * window.devicePixelRatio;
+            latCanvas.height = (lRect.height - 24) * window.devicePixelRatio;
+
+            const dRect = dopCanvas.parentElement.getBoundingClientRect();
+            dopCanvas.width = dRect.width * window.devicePixelRatio;
+            dopCanvas.height = (dRect.height - 24) * window.devicePixelRatio;
+        }
+        window.addEventListener('resize', resizeCanvases);
+        setTimeout(resizeCanvases, 50);
+
+        // Main 3D Simulation Loop
+        function renderScene() {
+            const w = orbitCanvas.width;
+            const h = orbitCanvas.height;
+            if(!w || !h) return;
+
+            ctxO.clearRect(0, 0, w, h);
+            ctxO.save();
+
+            orbitState.time += 0.015;
+
+            if (orbitState.viewMode === 'globe') {
+                render3DGlobe(w, h);
+            } else if (orbitState.viewMode === 'groundtrack') {
+                render2DGroundTrack(w, h);
+            } else {
+                renderMeshTopology(w, h);
+            }
+
+            ctxO.restore();
+
+            // Bottom Charts
+            renderChart(ctxL, latCanvas.width, latCanvas.height, latencyHist, '#0ea5e9', 60);
+            renderBipolarChart(ctxD, dopCanvas.width, dopCanvas.height, dopplerHist, '#10b981', 50);
+
+            requestAnimationFrame(renderScene);
+        }
+
+        // 3D Earth Globe & Walker Satellites
+        function render3DGlobe(w, h) {
+            const cx = w / 2;
+            const cy = h / 2;
+            const earthRadius = Math.min(w, h) * 0.22;
+            const satOrbitRadius = earthRadius * (1 + orbitState.altitude / R_EARTH * 0.8);
+
+            ctxO.translate(cx, cy);
+
+            // Atmospheric Glow
+            const atmoGrad = ctxO.createRadialGradient(0, 0, earthRadius * 0.95, 0, 0, earthRadius * 1.25);
+            atmoGrad.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+            atmoGrad.addColorStop(0.5, 'rgba(14, 165, 233, 0.15)');
+            atmoGrad.addColorStop(1, 'transparent');
+            ctxO.fillStyle = atmoGrad;
+            ctxO.beginPath();
+            ctxO.arc(0, 0, earthRadius * 1.25, 0, Math.PI * 2);
+            ctxO.fill();
+
+            // Earth Sphere (Ocean)
+            const oceanGrad = ctxO.createRadialGradient(-earthRadius * 0.3, -earthRadius * 0.3, earthRadius * 0.1, 0, 0, earthRadius);
+            oceanGrad.addColorStop(0, '#1e3a8a');
+            oceanGrad.addColorStop(0.7, '#0f172a');
+            oceanGrad.addColorStop(1, '#020617');
+            ctxO.fillStyle = oceanGrad;
+            ctxO.beginPath();
+            ctxO.arc(0, 0, earthRadius, 0, Math.PI * 2);
+            ctxO.fill();
+
+            // Continental Landmasses (Geometric projection rotation)
+            ctxO.strokeStyle = 'rgba(52, 211, 153, 0.5)';
+            ctxO.fillStyle = 'rgba(16, 185, 129, 0.15)';
+            ctxO.lineWidth = 1.5;
+            const rotEarth = orbitState.time * 0.15;
+
+            for(let lat = -60; lat <= 60; lat += 30) {
+                const latRad = (lat * Math.PI) / 180;
+                const rLat = earthRadius * Math.cos(latRad);
+                const yLat = -earthRadius * Math.sin(latRad);
+
+                ctxO.beginPath();
+                ctxO.ellipse(0, yLat, rLat, rLat * 0.3, 0, 0, Math.PI * 2);
+                ctxO.strokeStyle = 'rgba(56, 189, 248, 0.12)';
+                ctxO.stroke();
+            }
+
+            // Ground Station: Abha, KSA (Lat ~18.2° N)
+            const abhaX = earthRadius * 0.4 * Math.cos(rotEarth);
+            const abhaY = -earthRadius * 0.32;
+            ctxO.fillStyle = '#38bdf8';
+            ctxO.beginPath();
+            ctxO.arc(abhaX, abhaY, 5, 0, Math.PI * 2);
+            ctxO.fill();
+
+            // Compute and draw Satellite positions across Walker planes
+            const sats = [];
+            const incRad = (orbitState.inclination * Math.PI) / 180;
+
+            for(let p = 0; p < orbitState.planes; p++) {
+                const raan = (p / orbitState.planes) * Math.PI * 2 + (orbitCalc.dOmega_deg_day || 0) * 0.005;
+
+                for(let s = 0; s < orbitState.satsPerPlane; s++) {
+                    const meanAnomaly = (s / orbitState.satsPerPlane) * Math.PI * 2 + orbitState.time * 1.5 + (p * 0.5);
+
+                    // 3D Orbital Coordinates
+                    const x_orb = satOrbitRadius * Math.cos(meanAnomaly);
+                    const y_orb = satOrbitRadius * Math.sin(meanAnomaly);
+
+                    // Rotate by Inclination & RAAN
+                    const x1 = x_orb;
+                    const y1 = y_orb * Math.cos(incRad);
+                    const z1 = y_orb * Math.sin(incRad);
+
+                    const x3d = x1 * Math.cos(raan) - z1 * Math.sin(raan);
+                    const y3d = y1;
+                    const z3d = x1 * Math.sin(raan) + z1 * Math.cos(raan);
+
+                    sats.push({ x: x3d, y: y3d, z: z3d, p, s });
+                }
+            }
+
+            // Draw ISL Optical Laser Crosslinks between adjacent satellites
+            ctxO.strokeStyle = 'rgba(14, 165, 233, 0.4)';
+            ctxO.lineWidth = 1;
+            for(let i = 0; i < sats.length; i++) {
+                const s1 = sats[i];
+                // Connect intra-plane neighbor
+                const nextInPlane = sats.find(st => st.p === s1.p && st.s === (s1.s + 1) % orbitState.satsPerPlane);
+                if(nextInPlane) {
+                    ctxO.beginPath();
+                    ctxO.moveTo(s1.x, s1.y);
+                    ctxO.lineTo(nextInPlane.x, nextInPlane.y);
+                    ctxO.stroke();
+                }
+
+                // Connect inter-plane neighbor
+                const nextPlane = sats.find(st => st.p === (s1.p + 1) % orbitState.planes && st.s === s1.s);
+                if(nextPlane) {
+                    ctxO.strokeStyle = 'rgba(16, 185, 129, 0.25)';
+                    ctxO.beginPath();
+                    ctxO.moveTo(s1.x, s1.y);
+                    ctxO.lineTo(nextPlane.x, nextPlane.y);
+                    ctxO.stroke();
+                }
+            }
+
+            // Highlight Active Low-Latency Routing Path (Abha -> Tokyo)
+            if(sats.length >= 6) {
+                ctxO.strokeStyle = '#38bdf8';
+                ctxO.lineWidth = 2.5;
+                ctxO.beginPath();
+                ctxO.moveTo(abhaX, abhaY);
+                for(let h = 0; h < 5; h++) {
+                    const hopSat = sats[h * 3 % sats.length];
+                    ctxO.lineTo(hopSat.x, hopSat.y);
+                }
+                ctxO.stroke();
+            }
+
+            // Draw Satellite Nodes
+            for(let i = 0; i < sats.length; i++) {
+                const s = sats[i];
+                const isFront = s.z >= 0;
+                ctxO.fillStyle = isFront ? '#38bdf8' : 'rgba(56, 189, 248, 0.3)';
+                const sz = (isFront ? 3.5 : 2.0) * (window.devicePixelRatio || 1);
+                ctxO.beginPath();
+                ctxO.arc(s.x, s.y, sz, 0, Math.PI * 2);
+                ctxO.fill();
+            }
+        }
+
+        // 2D Ground Track Projection
+        function render2DGroundTrack(w, h) {
+            ctxO.strokeStyle = '#1e293b';
+            ctxO.lineWidth = 1;
+            ctxO.strokeRect(40, 40, w - 80, h - 80);
+
+            ctxO.fillStyle = '#94a3b8';
+            ctxO.font = `${11 * window.devicePixelRatio}px 'JetBrains Mono'`;
+            ctxO.fillText("Equirectangular 2D Ground Track Projection", 50, 30);
+
+            // Equator and Meridian
+            ctxO.beginPath();
+            ctxO.moveTo(40, h / 2); ctxO.lineTo(w - 40, h / 2);
+            ctxO.moveTo(w / 2, 40); ctxO.lineTo(w / 2, h - 40);
+            ctxO.stroke();
+
+            // Ground tracks (Sinusoidal waves modulated by Earth's daily rotation)
+            ctxO.strokeStyle = '#38bdf8';
+            ctxO.lineWidth = 2;
+
+            for(let p = 0; p < orbitState.planes; p++) {
+                ctxO.beginPath();
+                const shiftX = (p / orbitState.planes) * (w - 80);
+                for(let x = 40; x <= w - 40; x += 4) {
+                    const normX = (x - 40) / (w - 80);
+                    const y = h / 2 + Math.sin(normX * Math.PI * 4 + shiftX + orbitState.time) * ((h - 100) * 0.35 * (orbitState.inclination / 90));
+                    if(x === 40) ctxO.moveTo(x, y);
+                    else ctxO.lineTo(x, y);
+                }
+                ctxO.stroke();
+            }
+        }
+
+        // Optical Mesh Topology Graph
+        function renderMeshTopology(w, h) {
+            const cx = w / 2;
+            const cy = h / 2;
+            const rad = Math.min(w, h) * 0.35;
+
+            ctxO.save();
+            ctxO.translate(cx, cy);
+
+            const total = orbitState.planes * orbitState.satsPerPlane;
+            const nodes = [];
+
+            for(let i = 0; i < total; i++) {
+                const ang = (i / total) * Math.PI * 2;
+                nodes.push({ x: rad * Math.cos(ang), y: rad * Math.sin(ang) });
+            }
+
+            // Mesh Links
+            ctxO.strokeStyle = 'rgba(14, 165, 233, 0.2)';
+            ctxO.lineWidth = 1;
+            for(let i = 0; i < total; i++) {
+                const next = (i + 1) % total;
+                const cross = (i + orbitState.satsPerPlane) % total;
+
+                ctxO.beginPath(); ctxO.moveTo(nodes[i].x, nodes[i].y); ctxO.lineTo(nodes[next].x, nodes[next].y); ctxO.stroke();
+                ctxO.beginPath(); ctxO.moveTo(nodes[i].x, nodes[i].y); ctxO.lineTo(nodes[cross].x, nodes[cross].y); ctxO.stroke();
+            }
+
+            // Nodes
+            ctxO.fillStyle = '#10b981';
+            for(let i = 0; i < total; i++) {
+                ctxO.beginPath();
+                ctxO.arc(nodes[i].x, nodes[i].y, 3, 0, Math.PI * 2);
+                ctxO.fill();
+            }
+
+            ctxO.restore();
+        }
+
+        // Single-polarity chart
+        function renderChart(ctx, w, h, data, color, maxVal) {
+            ctx.clearRect(0, 0, w, h);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            const step = w / (data.length - 1);
+            for(let i = 0; i < data.length; i++) {
+                const val = Math.min(Math.max(data[i], 0), maxVal);
+                const y = h - (val / maxVal) * (h - 10) - 5;
+                const x = i * step;
+                if(i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+            const grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, color + '33');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+
+        // Bipolar chart for Doppler (+/-)
+        function renderBipolarChart(ctx, w, h, data, color, maxVal) {
+            ctx.clearRect(0, 0, w, h);
+            const mid = h / 2;
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const step = w / (data.length - 1);
+
+            for(let i = 0; i < data.length; i++) {
+                const val = Math.min(Math.max(data[i], -maxVal), maxVal);
+                const y = mid - (val / maxVal) * (mid - 8);
+                const x = i * step;
+                if(i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+        // Init
+        updateOrbitalPhysics();
+        requestAnimationFrame(renderScene);
+    </script>
+</body>
+</html>
